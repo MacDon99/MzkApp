@@ -6,10 +6,14 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Mzk.Api.Models;
+using Mzk.Api.Repositories;
+using Mzk.Api.Services;
 
 namespace MzkApp
 {
@@ -26,10 +30,13 @@ namespace MzkApp
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddTransient<IListDownloader, ListDownloader>();
+            services.AddScoped<Seeder>();
+            services.AddDbContext<AppDbContext>(options => options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Seeder seeder)
         {
             if (env.IsDevelopment())
             {
@@ -41,6 +48,8 @@ namespace MzkApp
             app.UseRouting();
 
             app.UseAuthorization();
+
+            seeder.SaveListsOfBussesToDatabase();
 
             app.UseEndpoints(endpoints =>
             {
